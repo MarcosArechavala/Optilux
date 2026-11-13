@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light Mode: Clinical Daylight */
+    --background: 210 40% 98%;      /* #F8FAFC Alabaster Slate */
+    --foreground: 222 47% 11%;      /* #0F172A Deep Clinical Ink */
+    --card: 0 0% 100%;              /* #FFFFFF Pure Clinical White */
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 199 89% 40%;         /* #0B84C4 Optical Cobalt */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 94%;       /* #E2E8F0 Slate Surface */
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 40%;
+    --accent: 160 84% 35%;          /* #0E9F6E Optical Emerald */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 89%;
+    --input: 214 32% 89%;
+    --ring: 199 89% 40%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    /* Dark Mode: Boutique Obsidian */
+    --background: 222 47% 5%;       /* #070B14 Obsidian Canvas */
+    --foreground: 210 40% 98%;      /* #F8FAFC Pure Crisp Text */
+    --card: 222 42% 9%;             /* #0E1525 Slate Boutique Card */
+    --card-foreground: 210 40% 98%;
+    --popover: 222 42% 9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 199 92% 56%;         /* #29B6F6 Luminous Cobalt */
+    --primary-foreground: 222 47% 7%;
+    --secondary: 217 33% 15%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 14%;
+    --muted-foreground: 215 20% 68%;
+    --accent: 158 76% 44%;          /* #1BC58D Luminous Emerald */
+    --accent-foreground: 222 47% 7%;
+    --destructive: 0 78% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 217 30% 18%;
+    --input: 217 30% 18%;
+    --ring: 199 92% 56%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* ------------------------------------------------------------------
+   Desplegables nativos (<select>) legibles en Light y Dark Mode
+   - color-scheme hace que el navegador pinte la lista de opciones
+     y los controles nativos (date, number, scrollbars) con el tema correcto.
+   - Las <option> reciben fondo/texto explícitos: sin esto, en Dark Mode
+     heredaban texto claro sobre el fondo blanco del sistema (invisibles).
+   ------------------------------------------------------------------ */
+:root {
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
+}
+
+select:not([multiple]) {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  background-size: 1rem 1rem;
+  padding-right: 2rem;
+  cursor: pointer;
+  color: hsl(var(--foreground));
+}
+
+select option,
+select optgroup {
+  background-color: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  font-weight: 500;
+}
+
+select option:checked {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: hsl(var(--primary));
+}
+
+/* Clinical Tabular Numbers for Diopters, SKUs, and Currency */
+.tabular-clinical {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom sleek scrollbars for Kanban and Rx tables */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+/* Hojas de Impresión dedicadas (@media print) para Etiquetas Térmicas y Sobres de Taller */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .printable-area,
+  .printable-area * {
+    visibility: visible;
+  }
+  .printable-area {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: 420px;
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 16px !important;
+    border: 1px solid #000000 !important;
+    box-shadow: none !important;
+  }
+}
+

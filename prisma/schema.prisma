@@ -1,0 +1,195 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Seguridad ────────────────────────────────────────────────
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String // ADMIN | VENDEDOR | TECNICO_LAB
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+}
+
+// Secuencias atómicas (números de OT, EAN internos)
+model Counter {
+  id    String @id
+  value Int    @default(0)
+}
+
+// Configuración clave/valor (cotización USD, meta diaria, etc.)
+model Setting {
+  key   String @id
+  value String
+}
+
+// ─── Clínica ──────────────────────────────────────────────────
+model Patient {
+  id              String         @id @default(cuid())
+  fullName        String
+  dni             String         @unique
+  phone           String
+  email           String?
+  healthInsurance String
+  memberNumber    String?
+  notes           String?
+  balance         Float          @default(0)
+  createdAt       DateTime       @default(now())
+  prescriptions   Prescription[]
+  orders          LabOrder[]
+}
+
+model Prescription {
+  id             String     @id @default(cuid())
+  patientId      String
+  patient        Patient    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorName     String
+  issueDate      DateTime
+  expiryDate     DateTime
+  odSph          Float      @default(0)
+  odCyl          Float      @default(0)
+  odAxis         Int        @default(0)
+  odAdd          Float      @default(0)
+  odDp           Float      @default(31.5)
+  odHeight       Float      @default(18.0)
+  oiSph          Float      @default(0)
+  oiCyl          Float      @default(0)
+  oiAxis         Int        @default(0)
+  oiAdd          Float      @default(0)
+  oiDp           Float      @default(31.5)
+  oiHeight       Float      @default(18.0)
+  lensUsage      String     @default("Lejos / Permanente")
+  attachmentName String?
+  attachmentPath String?
+  attachmentMime String?
+  observations   String?
+  createdAt      DateTime   @default(now())
+  orders         LabOrder[]
+}
+
+// ─── Inventario ───────────────────────────────────────────────
+model InventoryItem {
+  id            String     @id @default(cuid())
+  sku           String     @unique
+  barcode       String     @unique
+  brand         String
+  model         String
+  category      String // ARMAZON_RECETA | LENTE_SOL | LENTE_CONTACTO | ACCESORIO
+  color         String
+  material      String
+  caliberLens   Int        @default(54)
+  caliberBridge Int        @default(18)
+  caliberTemple Int        @default(145)
+  costPrice     Float
+  retailPrice   Float
+  stock         Int
+  minStock      Int        @default(3)
+  location      String     @default("Exhibidor A1")
+  orders        LabOrder[]
+}
+
+// ─── Logística ────────────────────────────────────────────────
+model Lab {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  contactName String?
+  phone       String?
+  email       String?
+  slaDays     Float      @default(4)
+  costFactor  Float      @default(0.35) // costo lab = % del valor de cristales+tratamientos
+  notes       String?
+  active      Boolean    @default(true)
+  orders      LabOrder[]
+}
+
+model LabOrder {
+  id               String           @id @default(cuid())
+  orderNumber      String           @unique
+  patientId        String
+  patient          Patient          @relation(fields: [patientId], references: [id])
+  prescriptionId   String?
+  prescription     Prescription?    @relation(fields: [prescriptionId], references: [id])
+  frameId          String?
+  frame            InventoryItem?   @relation(fields: [frameId], references: [id])
+  labId            String
+  lab              Lab              @relation(fields: [labId], references: [id])
+  lensType         String
+  lensMaterial     String
+  treatments       String
+  accessories      String?
+  labCost          Float            @default(0)
+  status           String // RECEPCION | ENVIADO_LAB | TALLADO | CONTROL_CALIDAD | LISTO_SUCURSAL | ENTREGADO
+  promisedDate     DateTime
+  // Desglose para mix de ventas
+  framePrice       Float            @default(0)
+  lensPrice        Float            @default(0)
+  treatmentsPrice  Float            @default(0)
+  accessoriesPrice Float            @default(0)
+  subtotal         Float
+  discount         Float            @default(0)
+  insuranceCovered Float            @default(0)
+  totalAmount      Float
+  depositPaid      Float
+  balanceDue       Float
+  sellerName       String
+  deliveredAt      DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  statusLogs       OrderStatusLog[]
+}
+
+model OrderStatusLog {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      LabOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStatus String?
+  toStatus   String
+  userName   String
+  createdAt  DateTime @default(now())
+
+  @@index([orderId])
+}
+
+// ─── Caja ─────────────────────────────────────────────────────
+model CashShift {
+  id             String            @id @default(cuid())
+  name           String // Turno Mañana | Turno Tarde | Turno Sábado
+  status         String            @default("OPEN") // OPEN | CLOSED
+  openedByName   String
+  openedAt       DateTime          @default(now())
+  openingAmount  Float             @default(0)
+  closedByName   String?
+  closedAt       DateTime?
+  expectedCash   Float?
+  declaredCash   Float?
+  difference     Float?
+  expectedUsd    Float?
+  declaredUsd    Float?
+  differenceUsd  Float?
+  transactions   CashTransaction[]
+}
+
+model CashTransaction {
+  id            String     @id @default(cuid())
+  shiftId       String?
+  shift         CashShift? @relation(fields: [shiftId], references: [id])
+  type          String // INGRESO | EGRESO
+  category      String
+  paymentMethod String // EFECTIVO | TARJETA_CREDITO | TARJETA_DEBITO | TRANSFERENCIA | MERCADOPAGO_QR | USD_BILLETE
+  currency      String     @default("ARS")
+  amount        Float
+  exchangeRate  Float      @default(1)
+  amountArs     Float
+  reference     String
+  operatorName  String
+  createdAt     DateTime   @default(now())
+
+  @@index([createdAt])
+}
