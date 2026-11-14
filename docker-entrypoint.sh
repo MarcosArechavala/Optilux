@@ -1,6 +1,16 @@
 #!/bin/sh
 set -e
 
+echo "=== OptiLux PRO: Iniciando contenedor ==="
+
+# Fallbacks seguros si no se configuraron las variables en Railway
+export DATABASE_URL="${DATABASE_URL:-file:/app/data/optilux.db}"
+export AUTH_SECRET="${AUTH_SECRET:-optilux-demo-fallback-secret-key-2026-hs256-secure}"
+export PORT="${PORT:-3000}"
+export HOSTNAME="0.0.0.0"
+
+echo "Usando DATABASE_URL=$DATABASE_URL en puerto $PORT"
+
 # Asegura que el directorio de datos persistente y uploads existan
 mkdir -p /app/data/uploads
 
@@ -11,7 +21,8 @@ if [ ! -L /app/uploads ]; then
 fi
 
 # Sincroniza el esquema Prisma con SQLite
-npx prisma db push --skip-generate
+echo "Sincronizando base de datos con Prisma..."
+./node_modules/.bin/prisma db push --skip-generate
 
 # Si no hay usuarios en la base de datos, carga los datos demo automáticamente
 USER_COUNT=$(node -e "
@@ -22,8 +33,8 @@ USER_COUNT=$(node -e "
 
 if [ "$USER_COUNT" = "0" ]; then
   echo "Base de datos vacía detectada. Sembrando datos demo de OptiLux PRO..."
-  npx tsx prisma/seed.ts
+  ./node_modules/.bin/tsx prisma/seed.ts
 fi
 
-exec npm run start
-
+echo "Levantando Next.js en 0.0.0.0:$PORT..."
+exec ./node_modules/.bin/next start -H 0.0.0.0 -p "$PORT"
